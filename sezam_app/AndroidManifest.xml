@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.spb.sezam"
+    android:versionCode="7"
+    android:versionName="1.0.0" >
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    
+    <!-- For MQTT -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+	<!-- m -->
+    
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="19" />
+
+    <application
+        android:name="App"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        
+        <service android:name="org.eclipse.paho.android.service.MqttService" >
+		</service>
+        
+        <activity android:name="com.vk.sdk.VKOpenAuthActivity" />
+        
+        <activity
+            android:name=".VKActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <activity android:name=".MessageActivity" 
+            android:screenOrientation="landscape"
+			android:configChanges="keyboardHidden|orientation|screenSize" >
+			<meta-data
+	            android:name="android.support.PARENT_ACTIVITY"
+	            android:value="com.spb.sezam.FriendsActivity" />
+		</activity>
+        	<!-- android:theme="@android:style/Theme.Holo.Light.NoActionBar" -->
+        
+        <activity android:name=".FriendsActivity" 
+            android:screenOrientation="landscape"
+			android:configChanges="keyboardHidden|orientation|screenSize"/>
+        
+    </application>
+    
+
+</manifest>
