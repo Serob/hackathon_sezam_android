@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vk_enter_captcha_text" translatable="false">Введите текст с картинки</string>
+    <string name="vk_retry" translatable="false">Повторить</string>
+    <string name="vk_send" translatable="false">Отправить</string>
+    <string name="vk_share" translatable="false">Поделиться</string>
+    <string name="vk_new_message_text" translatable="false">Введите текст сообщения..</string>
+    <string name="vk_new_post_settings" translatable="false">Настройки записи</string>
+</resources>
