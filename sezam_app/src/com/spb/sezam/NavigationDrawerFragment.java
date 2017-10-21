@@ -284,6 +284,7 @@ public class NavigationDrawerFragment extends Fragment {
 		Log.w("Time", "Dialogs recive at " + sdf.format(date));
 	}
     
+  //TODO: Ask VK team (showing unread/unopened dialogs count)
     private void checkUnreadeMessagesPeriodicly() {
 		checkUnreadMessagesRunnable = new Runnable() {
 			public void run() {

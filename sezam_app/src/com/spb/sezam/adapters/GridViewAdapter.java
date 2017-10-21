@@ -4,15 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.spb.sezam.IPictogramHolder;
 import com.spb.sezam.R;
 import com.spb.sezam.management.Pictogram;
 import com.spb.sezam.widged.GridViewItem;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

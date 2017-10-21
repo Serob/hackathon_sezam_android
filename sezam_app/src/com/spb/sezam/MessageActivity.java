@@ -1,10 +1,19 @@
 package com.spb.sezam;
 
 import java.io.File;
+import java.io.IOException;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,6 +35,8 @@ import com.spb.sezam.management.NameManager;
 import com.spb.sezam.management.Pictogram;
 import com.spb.sezam.management.PictogramManager;
 import com.spb.sezam.utils.ErrorUtil;
+import com.spb.sezam.utils.HttpUtils;
+import com.spb.sezam.utils.NetConstants;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.VKUIHelper;
@@ -38,7 +49,6 @@ import com.vk.sdk.api.VKResponse;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -63,6 +73,8 @@ import android.widget.ScrollView;
 import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.LinearLayout;
+
+//import com.loopj.android.http.JsonHttpResponseHandler;
 
 public class MessageActivity extends BaseActivity implements NavigationDrawerCallbacks, IPictogramHolder{
 	
@@ -94,9 +106,8 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 	
 	private View.OnClickListener onPictogramClickListener ;
 	
-	/** MQTT */
 	private String deviceId;
-	private final String serverURI = "tcp://192.168.1.103:1883"; //only tcp:, ssl:, local: //js-in@ wws:, mqtt:
+
 	
 	//--------------------------------VK listeners-----------------------------//
 	
@@ -236,35 +247,10 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setMessage("Вы уверены?").setPositiveButton("Да", dialogClickListener).setNegativeButton("Нет", dialogClickListener).show();
 			return true;
-		case R.id.action_email:
-			Intent i = new Intent(Intent.ACTION_SEND);
-			i.setType("text/plain");
-			i.putExtra(Intent.EXTRA_EMAIL  , new String[]{"support@sezamapp.ru"});
-			i.putExtra(Intent.EXTRA_SUBJECT, "Письмо администратору");
-			i.putExtra(Intent.EXTRA_TEXT   , "\nОтправлено с приложения Sezam");
-			try {
-			    startActivity(Intent.createChooser(i, "Send mail..."));
-			} catch (android.content.ActivityNotFoundException ex) {
-			    Toast.makeText(MessageActivity.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
-			}
-			return true;
-		case R.id.action_about:
-			AlertDialog.Builder aboutBuilder = new AlertDialog.Builder(this);
-			aboutBuilder.setMessage(R.string.about_app)
-		       .setCancelable(false)
-		       .setPositiveButton("ОК", new DialogInterface.OnClickListener() {
-		           public void onClick(DialogInterface dialog, int id) {
-		                return;
-		           }
-		       });
-			AlertDialog alert = aboutBuilder.create();
-			alert.show();
-			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
-
 
 	DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
 	    @Override
@@ -424,16 +410,21 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
         }
 	}	
 	
+	private String convertListToString(List<String> lst){
+		StringBuilder messageString = new StringBuilder();
+		for(String msg : lst){
+        	messageString.append(msg);
+        }
+		return messageString.toString();
+	}
+	
 	public void sendMessage(View v){		
 		if(messageToSend.size() > 0){
-			StringBuilder messageString = new StringBuilder();
-			for(String msg : messageToSend){
-	        	messageString.append(msg);
-	        }
+			String  messageString = convertListToString(messageToSend);
 			long guId = new Date().getTime();
 	        VKRequest request = new VKRequest("messages.send", VKParameters.from(
 		        		"user_id", String.valueOf(activeUserId), 
-		        		"message", messageString.toString(), "guid", guId));
+		        		"message", messageString, "guid", guId));
 			request.executeWithListener(messageSendListener);
 		}
 	}
@@ -448,7 +439,6 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 			Log.i("Time messages", "Messages recive at " + sdf.format(date));
 		}
 	}
-	
 	
 	public void addImageNameToSendMessages(String imageName){
 		messageToSend.add(ICON_SPLIT_SYMBOLS + imageName + ICON_SPLIT_SYMBOLS); 
@@ -488,6 +478,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		}
 	}
 
+	//TODO: Ask VK team
 	private void recieveMessagePeriodicly() {
 		recieveMessagesRunnable = new Runnable() {
 			public void run() {
@@ -615,10 +606,12 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 				//translated to pixels
 				int size = (int)getResources().getDimension(R.dimen.new_message_height)-5;
 				setImageViewSize(image, size, 2);
+				Log.w("Pic clicked", "Pic clicked");
 				
 				Pictogram pic = ((GridViewHolder)view.getTag()).getPictogram(); //was set in adapter
 				String picRuName  = NameManager.getInstance().getFileRuName(pic.getPath());
 				addImageNameToSendMessages(picRuName);
+				sendPredictionRequest(convertListToString(messageToSend));
 
 				final LinearLayout piktogramsLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 				ImageLoader imageLoader = ImageLoader.getInstance();
@@ -722,6 +715,45 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 			});
 		}
 	
+
+	private Request initPredictionRequest(String currentMssage){
+		HttpUrl url = new HttpUrl.Builder()
+		    .scheme("http")
+		    .host(NetConstants.HOST)
+		    .port(NetConstants.PORT)
+		    .addPathSegment(NetConstants.PREDICTION_PATH)
+		    .addQueryParameter(NetConstants.MESSAGE_PARAM, currentMssage)
+		    .build();
+	
+		return new Request.Builder()
+			.url(url)
+			.build();  
+	}
+	
+	private void sendPredictionRequest(String currentMssage){
+		OkHttpClient client = new OkHttpClient();   
+		Request req = initPredictionRequest(currentMssage);
+		
+		client.newCall(req).enqueue(new Callback() { // 3
+		    @Override
+			public void onResponse(Call call, Response response) throws IOException {
+		    	
+				final String result = response.body().string(); // 4
+				MessageActivity.this.runOnUiThread(new Runnable() {
+					public void run() {
+						Toast.makeText(MessageActivity.this, result,
+								Toast.LENGTH_LONG).show();
+					}
+				});
+			}
+
+			@Override
+			public void onFailure(Call arg0, IOException arg1) {
+				Log.e("asd", "--this is error code : " + arg0);
+			}
+		  });
+	}
+	
 	private void initImageLoader(){
 		ImageLoader imageLoader = ImageLoader.getInstance();
 		
@@ -737,4 +769,88 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		
 		imageLoader.init(config);
 	}
+	
+	//asynk request
+	/*private void sendPredictionRequest(String message){
+		RequestParams rp = new RequestParams();
+        rp.add("method", "sg");
+        rp.add("message", message);
+        HttpUtils.get("/users/asd", rp,  new JsonHttpResponseHandler() { 
+        	
+            @Override
+			public void onFailure(int statusCode,
+					org.apache.http.Header[] headers, Throwable throwable,
+					JSONArray errorResponse) {
+            	Log.e("asd", "--this is error code : " + statusCode);
+			}
+
+			@Override
+			public void onSuccess(int statusCode,
+					org.apache.http.Header[] headers, JSONObject response) {
+				 Log.d("asd", "---------------- this is response : " + response);
+	                Toast.makeText(MessageActivity.this, response.toString(),
+							   Toast.LENGTH_LONG).show();
+			}
+
+//			@Override 
+//            public void onSuccess(Header[] headers, JSONObject response) {
+//                // If the response is JSONObject instead of expected JSONArray 
+//                Log.d("asd", "---------------- this is response : " + response);
+//                Toast.makeText(MessageActivity.this, response.toString(),
+//						   Toast.LENGTH_LONG).show();
+//                   try { 
+//                	
+//                    JSONObject serverResp = new JSONObject(response.toString());                                                
+//                } catch (JSONException e) {
+//                    // TODO Auto-generated catch block 
+//                    e.printStackTrace();
+//                }                                
+//              }
+//
+//		@Override
+//			public void onFailure(int statusCode, Header[] headers,
+//					Throwable throwable, JSONObject errorResponse) {
+//				Log.e("asd", "--this is error code : " + statusCode);
+//				super.onFailure(statusCode, headers, throwable, errorResponse);
+//			}
+            
+            
+        });
+	}*/
+	
+	//retrofit
+/*	private void sendPredictionRequest2(String currentMssage){
+
+		Gson gson = new GsonBuilder()
+        .setLenient()
+        .create();
+		
+		Retrofit.Builder builder = new Retrofit.Builder()
+				.baseUrl("http://31.186.100.192/")
+				.addConverterFactory(GsonConverterFactory.create(gson));
+		
+		Retrofit retrofit = builder.build();
+		
+		PredictionClient predictionClient = retrofit.create(PredictionClient.class);
+		retrofit2.Call<String> call = predictionClient.getDefaultPrediction(currentMssage);
+
+		////
+		call.enqueue(new Callback<String>() {
+			
+			@Override
+			public void onFailure(retrofit2.Call<String> arg0,
+					Throwable arg1) {
+				Log.e("Error on prediction request", "Error on prediction request");
+				
+			}
+
+			@Override
+			public void onResponse(retrofit2.Call<String> arg0,
+					Response<String> response) {
+				Toast.makeText(MessageActivity.this, response.toString(),
+						   Toast.LENGTH_LONG).show();
+				
+			}
+		});
+	}*/
 }
