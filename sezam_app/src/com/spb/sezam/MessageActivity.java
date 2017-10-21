@@ -108,39 +108,13 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 	
 	private String deviceId;
 
-	
-	//--------------------------------VK listeners-----------------------------//
-	
-/*	private class MessageSendListener extends VKRequestListener{
-
-		private void sent(){
-			LinearLayout formLayout = (LinearLayout) findViewById(R.id.linearLayout1);
-			formLayout.removeAllViews();			
-			messageToSend.clear();
-			Toast showSent = Toast.makeText(getApplicationContext(), "Сообщение отправлено", Toast.LENGTH_SHORT);
-			showSent.show();
-		}
-		
-		//VK
-		@Override
-		public void onComplete(VKResponse response) {
-			sent();
-			recieveMessageHistory(MESSAGE_RECIEVE_COUNT);
-		}
-
-		@Override
-		public void onError(VKError error) {
-			ErrorUtil.showError(MessageActivity.this, error);
-		}
-	}*/
-	
 	private VKRequestListener messageSendListener  = new VKRequestListener(){
 
 		@Override
 		public void onComplete(VKResponse response) {
 			LinearLayout formLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 			formLayout.removeAllViews();
-			messageToSend.clear();
+			removeFromMessageToSend(true);
 			Toast showSent = Toast.makeText(getApplicationContext(), "Сообщение отправлено", Toast.LENGTH_SHORT);
 			showSent.show();
 			recieveMessageHistory(MESSAGE_RECIEVE_COUNT);
@@ -404,7 +378,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
         LinearLayout formLayout = (LinearLayout)findViewById(R.id.linearLayout1);
         if(messageToSend.size() != 0){
         	formLayout.removeViewAt(formLayout.getChildCount() - 1 );
-        	messageToSend.remove(messageToSend.size() - 1);
+        	removeFromMessageToSend(false);
         	HorizontalScrollView hView = (HorizontalScrollView)findViewById(R.id.new_mess_scroll);
         	scrollRight(hView);
         }
@@ -440,8 +414,44 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		}
 	}
 	
-	public void addImageNameToSendMessages(String imageName){
-		messageToSend.add(ICON_SPLIT_SYMBOLS + imageName + ICON_SPLIT_SYMBOLS); 
+	private void addImageIntoMessageToSend(String imageName){
+		changeMessageToSend(false, false, imageName);
+		//messageToSend.add(ICON_SPLIT_SYMBOLS + imageName + ICON_SPLIT_SYMBOLS);
+	}
+	
+	/**
+	 * Remove last element or all elements from <b>messageToSend</b>
+	 * @param removeAll if true, empties all messages
+	 */
+	private void removeFromMessageToSend(boolean removeAll){
+		changeMessageToSend(true, removeAll, null);
+	}
+	
+	/**
+	 * @deprecated <br>
+	 * <b>Use addImageNameToSendMessages and removeFromMessageToSend instead</b> <br>
+	 * Changes messageToSend
+	 * @param isRemove remove element(s) or not
+	 * @param removeAll remove all elements or the last one
+	 * @param imageName if needs to be added
+	 */
+	private void changeMessageToSend(boolean isRemove, boolean removeAll, String imageName){
+		if(isRemove){
+			if(removeAll){
+				messageToSend.clear();
+			} else {
+				messageToSend.remove(messageToSend.size() - 1);
+			}
+		} else {
+			if (imageName != null) {
+				messageToSend.add(ICON_SPLIT_SYMBOLS + imageName + ICON_SPLIT_SYMBOLS);
+			}
+		}
+		
+		//some action happened
+		if(isRemove || imageName != null){
+			sendPredictionRequest(convertListToString(messageToSend));
+		}
 	}
 
 	private void scorllDown(final ScrollView view) {
@@ -565,8 +575,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		historyLayout.removeAllViews();
 		LinearLayout formLayout = (LinearLayout)findViewById(R.id.linearLayout1);
 		formLayout.removeAllViews();
-		
-		messageToSend.clear();
+		removeFromMessageToSend(true);
 
 		//method is called first time
 		if(activeUserName == null){
@@ -610,8 +619,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 				
 				Pictogram pic = ((GridViewHolder)view.getTag()).getPictogram(); //was set in adapter
 				String picRuName  = NameManager.getInstance().getFileRuName(pic.getPath());
-				addImageNameToSendMessages(picRuName);
-				sendPredictionRequest(convertListToString(messageToSend));
+				addImageIntoMessageToSend(picRuName);
 
 				final LinearLayout piktogramsLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 				ImageLoader imageLoader = ImageLoader.getInstance();
@@ -733,7 +741,9 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		OkHttpClient client = new OkHttpClient();   
 		Request req = initPredictionRequest(currentMssage);
 		
-		client.newCall(req).enqueue(new Callback() { // 3
+		//TODO: check if empty
+		
+		client.newCall(req).enqueue(new Callback() { 
 		    @Override
 			public void onResponse(Call call, Response response) throws IOException {
 		    	

@@ -71,7 +71,8 @@
 		            android:orientation="horizontal"
 		            android:layout_alignParentRight="true"
 		            android:layout_alignParentBottom="true"
-		            android:background="@drawable/prediction_border">
+		            android:background="@drawable/prediction_border"
+		            android:visibility="gone">
 		            
 		             <ImageView
 		                 android:id="@+id/send2"

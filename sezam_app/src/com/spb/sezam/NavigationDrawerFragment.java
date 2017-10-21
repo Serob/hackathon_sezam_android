@@ -224,7 +224,7 @@ public class NavigationDrawerFragment extends Fragment {
     	usersInfoRunnable = new Runnable() {
 			@Override
 			public void run() {
-				VKRequest request = VKApi.friends().get(VKParameters.from("order", "name", VKApiConst.FIELDS, "id,first_name,last_name,sex,bdate"));
+				VKRequest request = VKApi.friends().get(VKParameters.from("order", "hints", VKApiConst.FIELDS, "id,first_name,last_name,sex,bdate"));
 				request.setPreferredLang("ru");
 				request.executeWithListener(loadFriendsListener); 
 				handler.postDelayed(this, 1000*60*5); //every 5 minutes
