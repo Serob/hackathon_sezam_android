@@ -714,7 +714,6 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 				}
 			});
 		}
-	
 
 	private Request initPredictionRequest(String currentMssage){
 		HttpUrl url = new HttpUrl.Builder()
