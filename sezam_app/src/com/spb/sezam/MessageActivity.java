@@ -787,8 +787,6 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 						} else {
 							predOuterLayout.setVisibility(View.GONE);
 						}
-						Toast.makeText(MessageActivity.this, result,
-								Toast.LENGTH_LONG).show();
 					}
 				});
 			}
