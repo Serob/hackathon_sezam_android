@@ -70,7 +70,7 @@ public class BaseActivity extends ActionBarActivity {
 	}
 
 	public void initVKSdk() {
-		VKSdk.initialize(sdkListener, "4619202");
+		VKSdk.initialize(sdkListener, "6229370");
 	}
 	
 	public static void authorize(){

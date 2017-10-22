@@ -26,14 +26,6 @@
 		        android:layout_below="@+id/startHelloText"
 		        android:layout_marginLeft="70dp"
 		        android:textSize="@dimen/start_text_size"/>
-		    
-		    <ImageView 
-		        android:id="@+id/startImage"
-		        android:layout_width="match_parent"
-		        android:layout_height="match_parent"
-		        android:layout_below="@+id/startHelpText"
-		        android:src="@drawable/ic_start" /> 
-		        
 	    </RelativeLayout>
 
 	    <LinearLayout
