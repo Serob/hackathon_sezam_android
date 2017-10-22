@@ -93,10 +93,12 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 	private GroupAdapter firstLevelGroupAdapter = null;
 	private GroupAdapter subGroupAdapter = null;
 	private GridViewAdapter gridViewAdapter = null;
+	private GridViewAdapter predictedGridViewAdapter = null;
 	//private MessageAdapter newMessageAdapter = null;
 	
 	private GridView subGroupsView = null;
 	private GridView pictogramsGridView = null;
+	private GridView predictedGridVew = null;
 	//in pixels
 	private int historyImageSize = 0;
 	
@@ -197,6 +199,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		subGroupsView = (GridView)findViewById(R.id.subGroups_view);
 		//subGroupsView.setChoiceMode(GridView.CHOICE_MODE_SINGLE);
 		pictogramsGridView = (GridView)findViewById(R.id.gridView1);
+		predictedGridVew = (GridView)findViewById(R.id.predictedGridView);
 		
 		historyImageSize = (int)(getResources().getDimension(R.dimen.new_message_height)/1.2);
 		
@@ -350,6 +353,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
     	Log.w("mtav", "mtav ste");
     }
 	
+	//TODO: as an example
 	private void showTextWithImages(String text, LinearLayout lLayout){
 		if(text == null || "".equals(text)){
 			return;
@@ -677,17 +681,17 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		View subgroupsContainer = findViewById(R.id.subGroups_container);
 		if(pictograms.size() == 0){
 			updateSubGroupAdapter(pictograms);
-			updatedateGridViewAdapter(pictograms);
+			updatePictogramsGridViewAdapter(pictograms);
 		} else {
 			if(pictograms.get(0).getType() == ElementType.FILE){
 				subgroupsContainer.setVisibility(View.GONE);
 				updateSubGroupAdapter(new ArrayList<Pictogram>());
-				updatedateGridViewAdapter(pictograms);
+				updatePictogramsGridViewAdapter(pictograms);
 			} else if(pictograms.get(0).getType() == ElementType.GROUP){
 				subgroupsContainer.setVisibility(View.VISIBLE);
 				updateSubGroupAdapter(pictograms);
 				subGroupsView.setItemChecked(0, true);
-				updatedateGridViewAdapter(((GroupPictogram)pictograms.get(0)).getInnerPictograms());
+				updatePictogramsGridViewAdapter(((GroupPictogram)pictograms.get(0)).getInnerPictograms());
 			}
 		}
 	}
@@ -700,7 +704,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 				@Override
 				public void onItemClick(AdapterView<?> parent, View view,int position, long id) {
 					GroupPictogram gp = (GroupPictogram)subGroupsView.getItemAtPosition(position);
-					updatedateGridViewAdapter(gp.getInnerPictograms());
+					updatePictogramsGridViewAdapter(gp.getInnerPictograms());
 				}
 			});
 		} else {
@@ -708,20 +712,30 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		}
 	}
 		
-	private void updatedateGridViewAdapter(List<Pictogram> pictograms){
-			if(gridViewAdapter == null){
-				gridViewAdapter = new GridViewAdapter(MessageActivity.this, MessageActivity.this, pictograms);
-				pictogramsGridView.setAdapter(gridViewAdapter);
-			} else {
-				gridViewAdapter.updateView(pictograms);
-			}
-			pictogramsGridView.post(new Runnable() {
-				@Override
-				public void run() {
-					pictogramsGridView.setSelection(0);//moothScrollToPosition(0);
-				}
-			});
+
+	
+	private void updateGridViewAdapter(final GridView gridView, GridViewAdapter adapter, List<Pictogram> pictograms){
+		if(adapter == null){
+			adapter = new GridViewAdapter(MessageActivity.this, MessageActivity.this, pictograms);
+			gridView.setAdapter(adapter);
+		} else {
+			adapter.updateView(pictograms);
 		}
+		gridView.post(new Runnable() {
+			@Override
+			public void run() {
+				gridView.setSelection(0);//moothScrollToPosition(0);
+			}
+		});
+	}
+	
+	private void updatePictogramsGridViewAdapter(List<Pictogram> pictograms){
+		updateGridViewAdapter(pictogramsGridView, gridViewAdapter, pictograms);
+	}
+	
+	private void updatePredictedGridViewAdapter(List<Pictogram> pictograms){
+		updateGridViewAdapter(predictedGridVew, predictedGridViewAdapter, pictograms);
+	}
 
 	private Request initPredictionRequest(String currentMssage){
 		HttpUrl url = new HttpUrl.Builder()
@@ -747,9 +761,32 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 		    @Override
 			public void onResponse(Call call, Response response) throws IOException {
 		    	
-				final String result = response.body().string(); // 4
+				final String result = response.body().string();
+				JSONObject respJson;
+				final List<Pictogram> pictograms = new ArrayList<>();
+				try {
+					respJson = new JSONObject(result);
+					JSONArray words = respJson.getJSONArray(NetConstants.RESP_OBJECT);
+					for(int i=0; i<words.length(); i++){
+						String path = NameManager.getInstance().getFileEngName(words.getString(i));
+						if(path != null){
+							Pictogram pg = new Pictogram(path);
+							pictograms.add(pg);
+						}
+					}
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				MessageActivity.this.runOnUiThread(new Runnable() {
 					public void run() {
+						LinearLayout predOuterLayout = (LinearLayout) findViewById(R.id.predicted);
+						if(pictograms.size()>0){
+							predOuterLayout.setVisibility(View.VISIBLE);
+							updatePredictedGridViewAdapter(pictograms);
+						} else {
+							predOuterLayout.setVisibility(View.GONE);
+						}
 						Toast.makeText(MessageActivity.this, result,
 								Toast.LENGTH_LONG).show();
 					}

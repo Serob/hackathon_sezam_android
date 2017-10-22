@@ -15,8 +15,6 @@ public class Pictogram  implements Comparable<Pictogram>{
 	
 	private float number = 0;
 	
-	private BitmapDrawable icon;
-	
 	public Pictogram(String path){
 		this.path = path;
 		Pattern afterLastSlash = Pattern.compile("[^\\" + File.separator + "]([^\\" +  File.separator + "]*)$");

@@ -67,20 +67,18 @@
 		        <LinearLayout 
 		            android:id="@+id/predicted"
 		            android:layout_width="wrap_content"
-		            android:layout_height="@dimen/new_message_height"
+		            android:layout_height="wrap_content"
 		            android:orientation="horizontal"
 		            android:layout_alignParentRight="true"
-		            android:layout_alignParentBottom="true"
-		            android:background="@drawable/prediction_border"
-		            android:visibility="gone">
+		            android:layout_alignParentBottom="true">
 		            
-		             <ImageView
-		                 android:id="@+id/send2"
-		                 android:layout_width="wrap_content"
-		                 android:layout_height="@dimen/new_message_height"
-		                 android:onClick="sendMessage"
-		                 android:src="@drawable/send"
-		                 android:contentDescription="Send"/>
+		              <GridView 
+			            android:id="@+id/predictedGridView"
+			            android:layout_width="@dimen/predict_width"
+			            android:layout_height="@dimen/predict_height"
+			            android:background="#FFFFFF"
+			            android:orientation="horizontal"
+			            android:numColumns="3"/>
 		        </LinearLayout>
 		        
 	        </RelativeLayout>
