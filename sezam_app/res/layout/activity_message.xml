@@ -62,7 +62,8 @@
 		            android:layout_height="wrap_content"
 		            android:orientation="horizontal"
 		            android:layout_alignParentRight="true"
-		            android:layout_alignParentBottom="true">
+		            android:layout_alignParentBottom="true"
+		            android:visibility="gone">
 		            
 		              <GridView 
 			            android:id="@+id/predictedGridView"
