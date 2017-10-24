@@ -739,7 +739,7 @@ public class MessageActivity extends BaseActivity implements NavigationDrawerCal
 
 	private Request initPredictionRequest(String currentMssage){
 		HttpUrl url = new HttpUrl.Builder()
-		    .scheme("http")
+		    .scheme(NetConstants.HTTP)
 		    .host(NetConstants.HOST)
 		    .port(NetConstants.PORT)
 		    .addPathSegment(NetConstants.PREDICTION_PATH)
